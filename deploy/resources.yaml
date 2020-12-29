@@ -1,0 +1,57 @@
+# CronJob
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: route53-ssl-monitor
+  labels:
+    app: route53-ssl-monitor
+spec:
+  schedule: "0 12 * * 3"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: route53-ssl-monitor
+        spec:
+          containers:
+          - name: route53-ssl-monitor
+            imagePullPolicy: Always
+            image: marciorodrigues87/route53-ssl-monitor:latest
+            resources:
+              requests:
+                memory: 128Mi
+                cpu: 100m
+              limits:
+                memory: 128Mi
+                cpu: 100m
+            env:
+              - name: SLACK_USERNAME
+                valueFrom:
+                  configMapKeyRef:
+                    name: route53-ssl-monitor
+                    key: SLACK_USERNAME
+              - name: SLACK_ICON
+                valueFrom:
+                  configMapKeyRef:
+                    name: route53-ssl-monitor
+                    key: SLACK_ICON
+              - name: SLACK_HOOK
+                valueFrom:
+                  secretKeyRef:
+                    name: route53-ssl-monitor
+                    key: SLACK_HOOK
+              - name: AWS_CREDENTIALS_IDS
+                valueFrom:
+                  secretKeyRef:
+                    name: route53-ssl-monitor
+                    key: AWS_CREDENTIALS_IDS
+              - name: AWS_CREDENTIALS_SECRETS
+                valueFrom:
+                  secretKeyRef:
+                    name: route53-ssl-monitor
+                    key: AWS_CREDENTIALS_SECRETS
+              - name: EXTRA_JAVA_OPTS
+                value: "-XX:CICompilerCount=1 -XX:-TieredCompilation -Xss256k -XX:MaxMetaspaceSize=50m -Xms50m -Xmx50m -server"
+          restartPolicy: OnFailure
